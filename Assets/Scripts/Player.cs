@@ -4,10 +4,16 @@ using UnityEngine;
 
 public class Player : MonoBehaviour
 {
+    [SerializeField] private Transform groundCheckTransform = null;
+    [SerializeField] private LayerMask playerMask;
+
     private Rigidbody playerRigidBody;
     private bool jumpKeyWasPressed;
     private float horizontalInput;
     private int maxJumpTimes;
+
+    private int superJumpsRemaining;
+
 
     // Start is called before the first frame update
     void Start()
@@ -19,7 +25,7 @@ public class Player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space) && maxJumpTimes<2)
+        if (Input.GetKeyDown(KeyCode.Space) && maxJumpTimes<(1 + superJumpsRemaining))
         {
             maxJumpTimes++;
             Debug.Log(maxJumpTimes);
@@ -32,20 +38,41 @@ public class Player : MonoBehaviour
 
     private void FixedUpdate()
     {
+
+        playerRigidBody.velocity = new Vector3(horizontalInput, playerRigidBody.velocity.y, 0);
+        //if(Physics.OverlapSphere(groundCheckTransform.position,0.1f).Length==1)
+        {
+           // Debug.Log($"cllision count is {Physics.OverlapSphere(groundCheckTransform.position, 0.1f,playerMask).Length}");
+        }
+
         if (jumpKeyWasPressed)
         {
-            playerRigidBody.AddForce(Vector3.up *5, ForceMode.VelocityChange);
+            float jumpower = 5f;
+            if(superJumpsRemaining >0)
+            {
+                jumpower = jumpower +3;
+                superJumpsRemaining--;
+            }
+            playerRigidBody.AddForce(Vector3.up * jumpower, ForceMode.VelocityChange);
             jumpKeyWasPressed =false;
 
 
             Debug.Log("Fixed update" + maxJumpTimes);
         }
-
-        playerRigidBody.velocity = new Vector3(horizontalInput, playerRigidBody.velocity.y, 0);
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-            maxJumpTimes =0;
+        maxJumpTimes =0;
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if(other.gameObject.layer == 7)
+        {
+            Destroy(other.gameObject);
+            superJumpsRemaining++;
+            Debug.Log("supper jumps " + superJumpsRemaining);
+        }
     }
 }
